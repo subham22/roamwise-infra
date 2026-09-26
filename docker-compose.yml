@@ -5,7 +5,7 @@ services:
     build: /home/ubuntu/roamwise-backend
     container_name: roamwise-backend
     environment:
-      DB_URL: jdbc:postgresql://roamwise.cvwuekisyde6.eu-north-1.rds.amazonaws.com:5432/roamwise_db
+      DB_URL: jdbc:postgresql://roamwise.cvwuekisyde6.eu-north-1.rds.amazonaws.com:5432/roamwise
       DB_USER: postgres
       DB_PASSWORD: ${DB_PASSWORD}
       REDIS_HOST: roamwise-z1vjbt.serverless.eun1.cache.amazonaws.com
