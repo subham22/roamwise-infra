@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend:
-    build: ./backend
+    build: /home/ubuntu/roamwise-backend
     container_name: roamwise-backend
     environment:
       DB_URL: jdbc:postgresql://roamwise.cvwuekisyde6.eu-north-1.rds.amazonaws.com:5432/roamwise_db
@@ -25,7 +25,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    build: ./frontend
+    build: /home/ubuntu/roamwise-frontend
     container_name: roamwise-frontend
     depends_on:
       - backend
