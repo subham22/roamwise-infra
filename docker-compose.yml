@@ -18,8 +18,8 @@ services:
       MAIL_PORT: ${MAIL_PORT}
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
-      FRONTEND_URL: http://13.60.82.214:4000
-      CORS_ALLOWED_ORIGINS: http://13.60.82.214:4000
+      FRONTEND_URL: http://16.170.254.145:4000
+      CORS_ALLOWED_ORIGINS: http://16.170.254.145:4000
     ports:
       - "8080:8080"
     restart: unless-stopped
