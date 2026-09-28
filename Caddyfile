@@ -15,4 +15,11 @@ roamwise.live {
     handle {
         reverse_proxy frontend:4000
     }
+
+    @seo path /robots.txt /sitemap.xml
+    handle @seo {
+        reverse_proxy frontend:4000 {
+            header_down Cache-Control "public, max-age=3600"
+        }
+    }
 }
