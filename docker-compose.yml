@@ -28,6 +28,7 @@ services:
       - backend
     environment:
       NG_ALLOWED_HOSTS: roamwise.live
+      NG_TRUST_PROXY_HEADERS: x-forwarded-for,x-forwarded-host,x-forwarded-proto
     restart: unless-stopped
 
   caddy:
