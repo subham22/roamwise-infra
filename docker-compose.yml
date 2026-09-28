@@ -18,8 +18,8 @@ services:
       MAIL_PORT: ${MAIL_PORT}
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
-      FRONTEND_URL: http://51.20.243.90:4000
-      CORS_ALLOWED_ORIGINS: http://51.20.243.90:4000
+      FRONTEND_URL: https://roamwise.live
+      CORS_ALLOWED_ORIGINS: https://roamwise.live
     ports:
       - "8080:8080"
     restart: unless-stopped
@@ -31,4 +31,27 @@ services:
       - backend
     ports:
       - "4000:4000"
+    environment:
+      - NG_ALLOWED_HOSTS: roamwise.live
     restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    container_name: roamwise-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+
+    depends_on:
+      - frontend
+      - backend
+
+    restart: unless_stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
