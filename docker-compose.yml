@@ -19,6 +19,8 @@ services:
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       FRONTEND_URL: https://roamwise.live
       CORS_ALLOWED_ORIGINS: https://roamwise.live
+      TURNSTILE_SECRET: ${TURNSTILE_SECRET}
+      TURNSTILE_HOSTNAMES: ${TURNSTILE_HOSTNAMES}
     restart: unless-stopped
 
   frontend:
