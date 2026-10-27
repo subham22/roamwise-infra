@@ -41,18 +41,19 @@ instance() {  # existing RUNNING instance id, or launch a new one
     id=$(oci compute instance launch --compartment-id "$T" --availability-domain "$AD" --shape $SHAPE \
       --image-id "$IMG" --subnet-id "$SUBNET" --assign-public-ip true --display-name "$1" \
       --boot-volume-size-in-gbs 50 --ssh-authorized-keys-file ~/.ssh/oracle.pub --user-data-file "$2" \
-      --wait-for-state RUNNING --query 'data.id' --raw-output 2>/dev/null)
+      --wait-for-state RUNNING --query 'data.id' --raw-output) || true
   fi
+  [ -n "$id" ] && [ "$id" != "None" ] || { echo "Could not create $1 (error above)" >&2; exit 1; }
   echo "$id"
 }
 vnic() { oci compute instance list-vnics --instance-id "$1" --query "data[0].\"$2\"" --raw-output; }
 
 curl -fsSL $BASE/api.sh -o /tmp/api.sh
-API=$(instance roamwise-api /tmp/api.sh)
+API=$(instance roamwise-api /tmp/api.sh) || exit 1
 API_PRIV=$(vnic "$API" private-ip); API_PUB=$(vnic "$API" public-ip)
 
 curl -fsSL $BASE/app.sh | sed "s/API_PRIVATE_IP/$API_PRIV/" > /tmp/app.sh
-APP=$(instance roamwise-app /tmp/app.sh)
+APP=$(instance roamwise-app /tmp/app.sh) || exit 1
 APP_PUB=$(vnic "$APP" public-ip)
 
 printf 'API_PRIV=%s\nAPI_PUB=%s\nAPP_PUB=%s\n' "$API_PRIV" "$API_PUB" "$APP_PUB" | tee ~/roamwise-ips
