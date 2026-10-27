@@ -14,6 +14,25 @@ IMG=$(oci compute image list --compartment-id "$T" --operating-system "Canonical
   --query 'data[0].id' --raw-output)
 echo "subnet=$SUBNET"; echo "image=$IMG"
 
+# Allow app VM -> api VM on 8080 (inside the VCN only). Appends to existing rules, never replaces them.
+SL=$(oci network subnet get --subnet-id "$SUBNET" --query 'data."security-list-ids"[0]' --raw-output)
+oci network security-list get --security-list-id "$SL" --query 'data."ingress-security-rules"' > /tmp/in.json
+if jq -e 'any(.[]; ."tcp-options"."destination-port-range".min == 8080)' /tmp/in.json >/dev/null; then
+  echo "8080 rule already present"
+else
+  jq 'def camel: gsub("-(?<c>[a-z])"; .c | ascii_upcase);
+      walk(if type == "object" then with_entries(.key |= camel) else . end) | del(..|nulls)
+      + [{"source":"10.0.0.0/16","sourceType":"CIDR_BLOCK","protocol":"6","isStateless":false,
+          "tcpOptions":{"destinationPortRange":{"min":8080,"max":8080}},"description":"app VM to api VM"}]' \
+    /tmp/in.json > /tmp/new.json
+  # safety: same rules plus one, and every port-restricted rule kept its ports
+  [ "$(jq length /tmp/new.json)" -eq $(( $(jq length /tmp/in.json) + 1 )) ] || { echo "rule merge looks wrong, not updating"; exit 1; }
+  [ "$(jq '[.[]|select(."tcp-options")]|length' /tmp/in.json)" -eq $(( $(jq "[.[]|select(.tcpOptions)]|length" /tmp/new.json) - 1 )) ] || \
+    { echo "port options lost, not updating"; exit 1; }
+  oci network security-list update --security-list-id "$SL" --ingress-security-rules file:///tmp/new.json --force >/dev/null
+  echo "8080 rule added"
+fi
+
 instance() {  # existing RUNNING instance id, or launch a new one
   local id
   id=$(oci compute instance list --compartment-id "$T" --display-name "$1" --lifecycle-state RUNNING \
