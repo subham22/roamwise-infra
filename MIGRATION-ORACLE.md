@@ -90,11 +90,10 @@ docker compose exec postgres psql -U postgres -d roamwise -c "select count(*) fr
 
 ## 6. Nightly backup (api VM)
 
+Automatic: every backend deploy installs a cron job (03:00 IST) that runs `backup.sh`, keeping 7 days of dumps in `~/backups` on the api VM (log: `~/backups/backup.log`). The disk is the only copy, so pull one to your laptop now and then:
+
 ```bash
-mkdir -p ~/backups && crontab -e
-```
-```
-0 3 * * * cd ~/roamwise-infra && docker compose exec -T postgres pg_dump -Fc -U postgres roamwise > ~/backups/roamwise-$(date +\%F).dump && find ~/backups -name '*.dump' -mtime +7 -delete
+scp -i <oracle key> ubuntu@<api VM public IP>:~/backups/roamwise-$(date +%F).dump .
 ```
 
 ## 7. Shut down AWS (after 2–3 good days)
