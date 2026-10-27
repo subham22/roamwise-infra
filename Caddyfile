@@ -19,13 +19,13 @@ roamwise.live {
 
     @sitemap path /sitemap.xml
     handle @sitemap {
-        reverse_proxy backend:8080 {
+        reverse_proxy {$BACKEND_UPSTREAM} {
             header_down Cache-Control "public, max-age=3600"
         }
     }
 
     handle /api/* {
-        reverse_proxy backend:8080
+        reverse_proxy {$BACKEND_UPSTREAM}
     }
 
     handle {
