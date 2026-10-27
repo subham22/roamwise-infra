@@ -8,12 +8,12 @@ ARM VM builds ARM images automatically. No workflow changes are needed.
 
 ```bash
 cd ~/roamwise-infra
-docker run --rm -e PGPASSWORD="$(grep '^DB_PASSWORD=' .env | cut -d= -f2-)" postgres:17-alpine \
+docker run --rm -e PGPASSWORD="$(grep '^DB_PASSWORD=' .env | cut -d= -f2-)" postgres:18-alpine \
   pg_dump -Fc -h roamwise.cvwuekisyde6.eu-north-1.rds.amazonaws.com -U postgres -d roamwise > ~/roamwise.dump
 ls -lh ~/roamwise.dump   # should be a few MB, not 0 bytes
 ```
 
-If it fails with a "server version mismatch", use the image tag that matches the RDS major version.
+RDS runs Postgres 18, so the image is 18 too. If it reports a "server version mismatch", match the tag to the RDS version.
 
 From your laptop (PowerShell), copy the dump and the `.env` down:
 
