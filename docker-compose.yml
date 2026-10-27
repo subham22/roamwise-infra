@@ -1,14 +1,21 @@
-
+# Profiles split the stack across VMs (set COMPOSE_PROFILES in .env):
+#   one big VM:          COMPOSE_PROFILES=app,api
+#   two Oracle micro VMs: app VM -> app, api VM -> api
 services:
   backend:
-    build: /home/ubuntu/roamwise-backend
+    image: ghcr.io/subham22/roamwise-backend:latest
     container_name: roamwise-backend
+    profiles: [api]
+    ports:
+      - "${BACKEND_BIND:-127.0.0.1}:8080:8080"
     environment:
-      DB_URL: jdbc:postgresql://roamwise.cvwuekisyde6.eu-north-1.rds.amazonaws.com:5432/roamwise
+      DB_URL: jdbc:postgresql://postgres:5432/roamwise
       DB_USER: postgres
       DB_PASSWORD: ${DB_PASSWORD}
-      REDIS_HOST: roamwise-z1vjbt.serverless.eun1.cache.amazonaws.com
+      REDIS_HOST: redis
       REDIS_PORT: "6379"
+      REDIS_SSL: "false"
+      JAVA_TOOL_OPTIONS: ${JAVA_OPTS:-}
       JWT_SECRET: ${JWT_SECRET}
       GOOGLE_PLACES_KEY: ${GOOGLE_PLACES_KEY}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
@@ -21,35 +28,70 @@ services:
       CORS_ALLOWED_ORIGINS: https://roamwise.live
       TURNSTILE_SECRET: ${TURNSTILE_SECRET}
       TURNSTILE_HOSTNAMES: ${TURNSTILE_HOSTNAMES}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:18-alpine
+    container_name: roamwise-postgres
+    profiles: [api]
+    environment:
+      POSTGRES_DB: roamwise
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d roamwise"]
+      interval: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: roamwise-redis
+    profiles: [api]
+    # cache only: no persistence needed
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "64mb", "--maxmemory-policy", "allkeys-lru"]
     restart: unless-stopped
 
   frontend:
-    build: /home/ubuntu/roamwise-frontend
+    image: ghcr.io/subham22/roamwise-frontend:latest
     container_name: roamwise-frontend
-    depends_on:
-      - backend
+    profiles: [app]
     environment:
       NG_ALLOWED_HOSTS: roamwise.live
       NG_TRUST_PROXY_HEADERS: x-forwarded-for,x-forwarded-host,x-forwarded-proto
+      NODE_OPTIONS: ${NODE_OPTS:-}
     restart: unless-stopped
 
   caddy:
     image: caddy:2
     container_name: roamwise-caddy
+    profiles: [app]
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      # api VM's private IP on the two-VM setup; the backend container on one VM
+      BACKEND_UPSTREAM: ${BACKEND_UPSTREAM:-backend:8080}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
-
     depends_on:
-      - frontend
-      - backend
-
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_started
+        required: false
     restart: unless-stopped
 
 volumes:
+  pgdata:
   caddy_data:
   caddy_config:
