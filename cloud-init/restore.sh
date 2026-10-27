@@ -16,18 +16,19 @@ $SCP ~/roamwise.dump ubuntu@$API_PUB:~/roamwise.dump
 $SSH ubuntu@$API_PUB bash -s <<'REMOTE'
 set -euo pipefail
 cd ~/roamwise-infra
+# every command below that doesn't need stdin gets </dev/null, or it would eat the rest of this script
 # add secrets once; keep the per-VM lines cloud-init wrote
 grep -q '^DB_PASSWORD=' .env || cat ~/secrets.env >> .env
 rm -f ~/secrets.env
-docker compose up -d postgres
-until docker compose exec -T postgres pg_isready -U postgres -d roamwise >/dev/null 2>&1; do sleep 2; done
-if [ "$(docker compose exec -T postgres psql -U postgres -d roamwise -tAc "select to_regclass('public.guide') is not null")" = "t" ]; then
+docker compose up -d postgres </dev/null
+until docker compose exec -T postgres pg_isready -U postgres -d roamwise </dev/null >/dev/null 2>&1; do sleep 2; done
+if [ "$(docker compose exec -T postgres psql -U postgres -d roamwise -tAc "select to_regclass('public.guide') is not null" </dev/null)" = "t" ]; then
   echo "Database already restored, skipping"
 else
   docker compose exec -T postgres pg_restore -U postgres -d roamwise --no-owner --no-privileges < ~/roamwise.dump
 fi
-echo "guides: $(docker compose exec -T postgres psql -U postgres -d roamwise -tAc 'select count(*) from guide')"
-echo "users:  $(docker compose exec -T postgres psql -U postgres -d roamwise -tAc 'select count(*) from users' 2>/dev/null || echo '?')"
+echo "guides: $(docker compose exec -T postgres psql -U postgres -d roamwise -tAc 'select count(*) from guide' </dev/null)"
+echo "users:  $(docker compose exec -T postgres psql -U postgres -d roamwise -tAc 'select count(*) from users' </dev/null 2>/dev/null || echo '?')"
 REMOTE
 
 echo "Waiting for roamwise-app setup to finish..."
