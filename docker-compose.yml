@@ -4,11 +4,12 @@ services:
     build: /home/ubuntu/roamwise-backend
     container_name: roamwise-backend
     environment:
-      DB_URL: jdbc:postgresql://roamwise.cvwuekisyde6.eu-north-1.rds.amazonaws.com:5432/roamwise
+      DB_URL: jdbc:postgresql://postgres:5432/roamwise
       DB_USER: postgres
       DB_PASSWORD: ${DB_PASSWORD}
-      REDIS_HOST: roamwise-z1vjbt.serverless.eun1.cache.amazonaws.com
+      REDIS_HOST: redis
       REDIS_PORT: "6379"
+      REDIS_SSL: "false"
       JWT_SECRET: ${JWT_SECRET}
       GOOGLE_PLACES_KEY: ${GOOGLE_PLACES_KEY}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
@@ -21,6 +22,33 @@ services:
       CORS_ALLOWED_ORIGINS: https://roamwise.live
       TURNSTILE_SECRET: ${TURNSTILE_SECRET}
       TURNSTILE_HOSTNAMES: ${TURNSTILE_HOSTNAMES}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: roamwise-postgres
+    environment:
+      POSTGRES_DB: roamwise
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d roamwise"]
+      interval: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: roamwise-redis
+    # cache only: no persistence needed
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
     restart: unless-stopped
 
   frontend:
@@ -51,5 +79,6 @@ services:
     restart: unless-stopped
 
 volumes:
+  pgdata:
   caddy_data:
   caddy_config:
