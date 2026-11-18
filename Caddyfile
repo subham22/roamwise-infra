@@ -24,7 +24,13 @@ roamwise.live {
         }
     }
 
+    # retired guide slugs that Google still crawls (404 in Search Console)
+    redir /guides/jaipur-india-4-days /guides/jaipur-india-3-days permanent
+    redir /guides/rishikesh-india-4-days /guides/rishikesh-india-2-days permanent
+
     handle /api/* {
+        # keep API/photo-proxy URLs out of Google's index and crawl budget
+        header X-Robots-Tag "noindex, nofollow"
         reverse_proxy {$BACKEND_UPSTREAM}
     }
 
