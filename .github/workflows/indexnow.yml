@@ -1,0 +1,17 @@
+name: IndexNow
+on:
+  schedule:
+    - cron: '30 22 * * *'   # 04:00 IST, after the nightly backup
+  workflow_dispatch:
+    inputs:
+      all:
+        description: Submit every sitemap URL (not just pages changed in the last 2 days)
+        type: boolean
+        default: false
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python scripts/indexnow.py ${{ inputs.all && '--all' || '' }}

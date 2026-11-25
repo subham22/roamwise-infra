@@ -24,6 +24,11 @@ roamwise.live {
         }
     }
 
+    # IndexNow ownership key for Bing/Yandex (public by design; used by .github/workflows/indexnow.yml)
+    handle /a97fdb5e702b9752db92b42bd24c88df.txt {
+        respond "a97fdb5e702b9752db92b42bd24c88df" 200
+    }
+
     # retired guide slugs that Google still crawls (404 in Search Console)
     redir /guides/jaipur-india-4-days /guides/jaipur-india-3-days permanent
     redir /guides/rishikesh-india-4-days /guides/rishikesh-india-2-days permanent
